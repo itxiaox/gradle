@@ -7,17 +7,39 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:4.2.0-alpha05"
         classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
-
+Properties getProperties() {
+    Properties properties = new Properties()
+    InputStream inputStream = project.rootProject.file('./local.properties').newDataInputStream()
+    properties.load(inputStream)
+    return properties
+}
+def authToken = getProperties().getProperty("authToken")
+ext.localMaven = project.rootDir.path + "\\repository"//maven库生成在项目根目录下，可以这样获取
+//ext.localMaven "F:\\maven\\repository" //maven库生成到电脑磁盘的指定目录下
 allprojects {
     repositories {
+        //情形一：远程JitPack公共库
+        maven { url 'https://jitpack.io' }
+        //情形二：远程Github/JitPack私有库
+        maven {
+            url 'https://jitpack.io'
+            credentials { username authToken }
+            //authToken是之前在jitpack上生成的token，可以在自己的本地local.properties中定义，防止外泄
+        }
+        //情形三：本地私有库
+        maven { url localMaven }
+        //情形四：maven私服
+        maven {
+            //私有服务器仓库地址, 127.0.0.1换成自己的私服服务器地址
+            url 'http://127.0.0.1:8081/nexus/content/repositories/releases/'
+        }
         google()
         jcenter()
     }
 }
+
 
 task clean(type: Delete) {
     delete rootProject.buildDir
